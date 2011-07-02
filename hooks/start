@@ -1,0 +1,5 @@
+#!/bin/bash
+start -ue
+echo "Start action" >>/tmp/log
+
+service rabbitmq-server status || service rabbitmq-server start

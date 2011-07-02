@@ -1,0 +1,20 @@
+#!/bin/bash
+set -ue
+ensemble-log "Starting install."
+echo "INSTALL" >>/tmp/log
+
+DEFAULT_ETH=$(ip route  | grep default | awk '{ print $5 }')
+IP=$(ifconfig  $DEFAULT_ETH | grep 'inet addr' | awk '{ print $2 }' | cut -d: -f2)
+
+
+if ! cat /etc/hosts | grep "$IP $HOSTNAME" >>/dev/null; then
+	echo "Updating /etc/hosts"
+	echo $IP $HOSTNAME >> /etc/hosts
+fi
+
+DEBIAN_FRONTEND=noninteractive apt-get -y install rabbitmq-server
+rc=$?
+echo "Install done. Exiting rc $rc" >>/tmp/log
+ensemble-log "Install complete. $rc"
+exit $rc
+

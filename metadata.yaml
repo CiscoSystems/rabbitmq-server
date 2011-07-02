@@ -1,0 +1,12 @@
+ensemble: formula
+name: rabbitmq
+revision: 10
+summary:  "An AMQP server written in Erlang"
+description: |
+ RabbitMQ is an implementation of AMQP, the emerging standard for high
+ performance enterprise messaging. The RabbitMQ server is a robust and
+ scalable implementation of an AMQP broker.
+provides:
+  amqp:
+    interface: rabbitmq
+
