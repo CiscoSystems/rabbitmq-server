@@ -4,6 +4,9 @@ echo "CHANGED" >>/tmp/log
 RABBIT_USER=`relation-get username`
 RABBIT_PASSWD=`relation-get password`
 
+DEFAULT_ETH=$(ip route  | grep default | awk '{ print $5 }')
+IP=$(ifconfig  $DEFAULT_ETH | grep 'inet addr' | awk '{ print $2 }' | cut -d: -f2)
+
 RABBIT_CTL='rabbitmqctl'
 PASSWD_FILE="/var/run/ensemble/$RABBIT_USER.passwd"
 
@@ -44,3 +47,6 @@ fi
 if [[ ! -e $PASSWD_FILE ]] ; then
   ensemble-log  "WARN: $RABBIT_USER exists, but $PASSWD_FILE does not!"
 fi
+
+ensemble-log "Giving peer my IP - $IP"
+relation-set ip=$IP
