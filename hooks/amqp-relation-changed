@@ -1,8 +1,8 @@
 #!/bin/bash
 set -ue
-echo "CHANGED" >>/tmp/log
+
+# peer gives us a username, we generate credentials and access in return
 RABBIT_USER=`relation-get username`
-RABBIT_PASSWD=`relation-get password`
 
 DEFAULT_ETH=$(ip route  | grep default | awk '{ print $5 }')
 IP=$(ifconfig  $DEFAULT_ETH | grep 'inet addr' | awk '{ print $2 }' | cut -d: -f2)
@@ -12,7 +12,15 @@ PASSWD_FILE="/var/run/ensemble/$RABBIT_USER.passwd"
 
 if ! which pwgen ; then apt-get -y install pwgen ; fi
 
-if [[ -z $RABBIT_USER ]] || [[ -z $RABBIT_PASSWD ]] ; then
+if [[ -e $PASSWD_FILE ]] ; then
+  PASSWORD=$(cat $PASSWD_FILE)
+else
+  PASSWORD=$(pwgen 10 1)
+  echo $PASSWORD >$PASSWD_FILE
+  chmod 0400 $PASSWD_FILE
+fi
+
+if [[ -z $RABBIT_USER ]] ; then
     ensemble-log "Peer not ready."
     exit 0
 fi
@@ -27,10 +35,14 @@ function user_is_admin {
 
 function user_create {
   ensemble-log "Creating user $1."
-  PASSWORD=$(pwgen 10 1)
+
   $RABBIT_CTL add_user $1 $PASSWORD || return 1
-  [[ ! -e $PASSWD_FILE ]] && echo $PASSWORD>$PASSWD_FILE
-  chmod 0400 $PASSWD_FILE
+
+  # grant the user all permissions on the default vhost /
+  # TODO: investigate sane permissions
+  ensemble-log "Granting permission to $1 on vhost /"
+  $RABBIT_CTL set_permissions -p / $1 ".*" ".*" ".*"
+
   if [[ $2 == 'admin' ]]  ; then
     user_is_admin $1 && return 0
     ensemble-log "Granting user $1 admin access"
@@ -44,9 +56,6 @@ else
   ensemble-log "RabbiqMQ user $RABBIT_USER already exists."
 fi
 
-if [[ ! -e $PASSWD_FILE ]] ; then
-  ensemble-log  "WARN: $RABBIT_USER exists, but $PASSWD_FILE does not!"
-fi
-
-ensemble-log "Giving peer my IP - $IP"
+ensemble-log "Giving peer credentials for $RABBIT_USER@$IP"
 relation-set ip=$IP
+relation-set password=$PASSWORD
