@@ -1,4 +1,1 @@
-#!/bin/bash
-start -ue
-
-echo "stop" >>/tmp/log
+rabbitmq-relations

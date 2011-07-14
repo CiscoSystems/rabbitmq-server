@@ -1,4 +1,1 @@
-#!/bin/bash
-set -ue
-echo "JOINED" >>/tmp/log
-
+rabbitmq-relations

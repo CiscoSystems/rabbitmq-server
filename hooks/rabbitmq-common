@@ -1,0 +1,29 @@
+#!/bin/bash
+
+RABBIT_CTL='rabbitmqctl'
+PASSWD_FILE="/var/run/ensemble/$RABBIT_USER.passwd"
+HOSTNAME=`hostname -f`
+function user_exists {
+  $RABBIT_CTL list_users | grep $1 >/dev/null
+}
+
+function user_is_admin {
+  $RABBIT_CTL list_users | grep $1 | grep true >/dev/null
+}
+
+function user_create {
+  ensemble-log "rabbitmq: Creating user $1."
+
+  $RABBIT_CTL add_user $1 $PASSWORD || return 1
+
+  # grant the user all permissions on the default vhost /
+  # TODO: investigate sane permissions
+  ensemble-log "rabbitmq: Granting permission to $1 on vhost /"
+  $RABBIT_CTL set_permissions -p / $1 ".*" ".*" ".*"
+
+  if [[ $2 == 'admin' ]]  ; then
+    user_is_admin $1 && return 0
+    ensemble-log "rabbitmq: Granting user $1 admin access"
+    $RABBIT_CTL set_admin $1 || return 1
+  fi
+}
