@@ -48,5 +48,5 @@ case $ARG0 in
   "amqp-relation-changed") amqp_changed ;;
 esac
 rc=$?
-ensemble-log "rabbitmq: Hook $ARG0 complete. Exitting $rc"
+ensemble-log "rabbitmq: Hook $ARG0 complete. Exiting $rc"
 exit $rc
