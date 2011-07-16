@@ -1,8 +1,8 @@
 #!/bin/bash
 
 RABBIT_CTL='rabbitmqctl'
-PASSWD_FILE="/var/run/ensemble/$RABBIT_USER.passwd"
 HOSTNAME=`hostname -f`
+
 function user_exists {
   $RABBIT_CTL list_users | grep $1 >/dev/null
 }

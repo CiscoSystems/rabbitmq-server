@@ -3,17 +3,24 @@ set -u
 FORMULA_DIR=$(dirname $0)
 ARG0=${0##*/}
 
+if [[ -e $FORMULA_DIR/rabbitmq-common ]] ; then
+  . $FORMULA_DIR/rabbitmq-common
+else
+  ensemble-log "rabbitmq: ERROR Could not load $FORMULA_DIR/rabbitmq-common"
+  exit 1
+fi
+
 ensemble-log "rabbitmq: Firing hook $ARG0."
 
-DEFAULT_ETH=$(ip route  | grep default | awk '{ print $5 }')
-IP=$(ifconfig  $DEFAULT_ETH | grep 'inet addr' | awk '{ print $2 }' | cut -d: -f2)
-
-
 function install_hook() {
+  DEFAULT_ETH=$(ip route  | grep default | awk '{ print $5 }')
+  IP=$(ifconfig  $DEFAULT_ETH | grep 'inet addr' | awk '{ print $2 }' | cut -d: -f2)
+
   if ! cat /etc/hosts | grep "$IP $HOSTNAME" >>/dev/null; then
     echo "Updating /etc/hosts"
     echo $IP $HOSTNAME >> /etc/hosts
   fi
+
   [[ ! `which pwgen` ]] && apt-get -y install pwgen
   apt-get -y install rabbitmq-server
   rc=$?
@@ -23,6 +30,7 @@ function install_hook() {
 function amqp_changed() {
   RABBIT_USER=`relation-get username`
   [[ -z $RABBIT_USER ]] && exit 0
+  PASSWD_FILE="/var/run/ensemble/$RABBIT_USER.passwd"
   if [[ -e $PASSWD_FILE ]] ; then
     PASSWORD=$(cat $PASSWD_FILE)
   else
