@@ -22,9 +22,12 @@ function install_hook() {
   fi
 
   [[ ! `which pwgen` ]] && apt-get -y install pwgen
-  apt-get -y install rabbitmq-server
+
+  DEBIAN_FRONTEND=noninteractive apt-get -qqy \
+    install --no-install-recommends rabbitmq-server
   rc=$?
   ensemble-log "rabbitmq: Installation complete. $rc"
+  service rabbitmq-server stop
 }
 
 function amqp_changed() {
