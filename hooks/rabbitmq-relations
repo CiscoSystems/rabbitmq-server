@@ -51,6 +51,10 @@ function install_hook() {
 }
 
 function amqp_changed() {
+  # Connecting clients should request a username.
+  # In reponse, we generate a password for new users,
+  # grant the user access on the default vhost "/",
+  # and tell it where to reach us.
   RABBIT_USER=`relation-get username`
   [[ -z $RABBIT_USER ]] && exit 0
   PASSWD_FILE="/var/run/ensemble/$RABBIT_USER.passwd"
