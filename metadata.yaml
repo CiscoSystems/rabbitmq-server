@@ -1,6 +1,6 @@
 ensemble: formula
 name: rabbitmq
-revision: 27
+revision: 41
 summary:  "An AMQP server written in Erlang"
 description: |
  RabbitMQ is an implementation of AMQP, the emerging standard for high
@@ -10,3 +10,6 @@ provides:
   amqp:
     interface: rabbitmq
 
+peers:
+  cluster:
+    interface: rabbitmq

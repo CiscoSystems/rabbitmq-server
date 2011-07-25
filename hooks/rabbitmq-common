@@ -20,6 +20,7 @@
 
 RABBIT_CTL='rabbitmqctl'
 HOSTNAME=`hostname -f`
+ERLANG_COOKIE="/var/lib/rabbitmq/.erlang.cookie"
 
 function user_exists {
   $RABBIT_CTL list_users | grep $1 >/dev/null

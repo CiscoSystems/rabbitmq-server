@@ -75,13 +75,46 @@ function amqp_changed() {
   relation-set password=$PASSWORD
 }
 
+function cluster_joined {
+  REMOTE_UNIT_ID=$(echo $ENSEMBLE_REMOTE_UNIT | cut -d/ -f2)
+  LOCAL_UNIT_ID=$(echo $ENSEMBLE_UNIT_NAME | cut -d/ -f2)
+  [[ $LOCAL_UNIT_ID -gt $REMOTE_UNIT_ID ]] && echo "Relation greater" && exit 0
+  if [[ ! -e $ERLANG_COOKIE ]] ; then
+    ensemble-log "rabbitmq: ERROR Could not find cookie at $ERLANG_COOKIE"
+    exit 1
+  fi
+  relation-set cookie=$(cat $ERLANG_COOKIE) host=$HOSTNAME
+}
+
+function cluster_changed {
+  REMOTE_UNIT_ID=$(echo $ENSEMBLE_REMOTE_UNIT | cut -d/ -f2)
+  LOCAL_UNIT_ID=$(echo $ENSEMBLE_UNIT_NAME | cut -d/ -f2)
+  [[ $LOCAL_UNIT_ID -lt $REMOTE_UNIT_ID ]] && echo "Relation lesser" && exit 0
+
+  REMOTE_HOST=$(relation-get host)
+  COOKIE_VALUE=$(relation-get cookie)
+  [[ -z $REMOTE_HOST ]] || [[ -z $COOKIE_VALUE ]] && \
+    ensemble-log "rabbimtq REMOTE_HOST||COOKIE_VALUE not yet set." \
+    exit 0
+
+  service rabbitmq-server stop
+  echo -n $COOKIE_VALUE > $ERLANG_COOKIE
+  service rabbitmq-server start
+  rabbitmqctl reset
+  rabbitmqctl cluster rabbit@$HOSTNAME rabbit@$REMOTE_HOST
+  rabbitmqctl start_app
+}
+
 case $ARG0 in
   "install") install_hook ;;
   "start") service rabbitmq-server status || service rabbitmq-server start ;;
   "stop") service rabbitmq-server status && service rabbitmq-server stop ;;
   "amqp-relation-joined") exit 0 ;;
   "amqp-relation-changed") amqp_changed ;;
+  "cluster-relation-joined") cluster_joined ;;
+  "cluster-relation-changed") cluster_changed ;;
 esac
+
 rc=$?
 ensemble-log "rabbitmq: Hook $ARG0 complete. Exiting $rc"
 exit $rc
