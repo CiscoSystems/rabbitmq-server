@@ -26,11 +26,11 @@ ARG0=${0##*/}
 if [[ -e $FORMULA_DIR/rabbitmq-common ]] ; then
   . $FORMULA_DIR/rabbitmq-common
 else
-  ensemble-log "rabbitmq: ERROR Could not load $FORMULA_DIR/rabbitmq-common"
+  ensemble-log "rabbitmq-server: ERROR Could not load $FORMULA_DIR/rabbitmq-common"
   exit 1
 fi
 
-ensemble-log "rabbitmq: Firing hook $ARG0."
+ensemble-log "rabbitmq-server: Firing hook $ARG0."
 
 function install_hook() {
   DEFAULT_ETH=$(ip route  | grep default | awk '{ print $5 }')
@@ -46,17 +46,20 @@ function install_hook() {
   DEBIAN_FRONTEND=noninteractive apt-get -qqy \
     install --no-install-recommends rabbitmq-server
   rc=$?
-  ensemble-log "rabbitmq: Installation complete. $rc"
   service rabbitmq-server stop
 }
 
 function amqp_changed() {
-  # Connecting clients should request a username.
+  # Connecting clients should request a username and vhost.
   # In reponse, we generate a password for new users,
   # grant the user access on the default vhost "/",
   # and tell it where to reach us.
   RABBIT_USER=`relation-get username`
-  [[ -z $RABBIT_USER ]] && exit 0
+  VHOST=`relation-get vhost`
+  if [[ -z $RABBIT_USER ]] || [[ -z $VHOST ]] ; then
+    ensemble-log "rabbitmq-server: RABBIT_USER||VHOST not yet received from peer."
+    exit 0
+  fi
   PASSWD_FILE="/var/run/ensemble/$RABBIT_USER.passwd"
   if [[ -e $PASSWD_FILE ]] ; then
     PASSWORD=$(cat $PASSWD_FILE)
@@ -65,12 +68,17 @@ function amqp_changed() {
     echo $PASSWORD >$PASSWD_FILE
     chmod 0400 $PASSWD_FILE
   fi
+  if ! vhost_exists ; then
+    ensemble-log "rabbitmq-server: Creating vhost $VHOST"
+    create_vhost
+  fi
   if ! user_exists $RABBIT_USER ; then
+    ensemble-log "rabbitmq-server: Creating user $RABBIT_USER"
     user_create $RABBIT_USER admin || exit 1
   else
-    ensemble-log "rabbitmq: user $RABBIT_USER already exists."
+    ensemble-log "rabbitmq-server: user $RABBIT_USER already exists."
   fi
-  ensemble-log "rabbitmq: Returning credentials for $RABBIT_USER@$HOSTNAME"
+  ensemble-log "rabbitmq-server: Returning credentials for $RABBIT_USER@$HOSTNAME"
   relation-set hostname=$HOSTNAME
   relation-set password=$PASSWORD
 }
@@ -80,7 +88,7 @@ function cluster_joined {
   LOCAL_UNIT_ID=$(echo $ENSEMBLE_UNIT_NAME | cut -d/ -f2)
   [[ $LOCAL_UNIT_ID -gt $REMOTE_UNIT_ID ]] && echo "Relation greater" && exit 0
   if [[ ! -e $ERLANG_COOKIE ]] ; then
-    ensemble-log "rabbitmq: ERROR Could not find cookie at $ERLANG_COOKIE"
+    ensemble-log "rabbitmq-server: ERROR Could not find cookie at $ERLANG_COOKIE"
     exit 1
   fi
   relation-set cookie=$(cat $ERLANG_COOKIE) host=$HOSTNAME
@@ -94,7 +102,7 @@ function cluster_changed {
   REMOTE_HOST=$(relation-get host)
   COOKIE_VALUE=$(relation-get cookie)
   [[ -z $REMOTE_HOST ]] || [[ -z $COOKIE_VALUE ]] && \
-    ensemble-log "rabbimtq REMOTE_HOST||COOKIE_VALUE not yet set." \
+    ensemble-log "rabbimtq-server: REMOTE_HOST||COOKIE_VALUE not yet set." \
     exit 0
 
   service rabbitmq-server stop
@@ -116,5 +124,5 @@ case $ARG0 in
 esac
 
 rc=$?
-ensemble-log "rabbitmq: Hook $ARG0 complete. Exiting $rc"
+ensemble-log "rabbitmq-server: Hook $ARG0 complete. Exiting $rc"
 exit $rc
