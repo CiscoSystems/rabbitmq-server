@@ -26,11 +26,11 @@ ARG0=${0##*/}
 if [[ -e $FORMULA_DIR/rabbitmq-common ]] ; then
   . $FORMULA_DIR/rabbitmq-common
 else
-  ensemble-log "rabbitmq-server: ERROR Could not load $FORMULA_DIR/rabbitmq-common"
+  juju-log "rabbitmq-server: ERROR Could not load $FORMULA_DIR/rabbitmq-common"
   exit 1
 fi
 
-ensemble-log "rabbitmq-server: Firing hook $ARG0."
+juju-log "rabbitmq-server: Firing hook $ARG0."
 
 function install_hook() {
   DEFAULT_ETH=$(ip route  | grep default | awk '{ print $5 }')
@@ -57,10 +57,10 @@ function amqp_changed() {
   RABBIT_USER=`relation-get username`
   VHOST=`relation-get vhost`
   if [[ -z $RABBIT_USER ]] || [[ -z $VHOST ]] ; then
-    ensemble-log "rabbitmq-server: RABBIT_USER||VHOST not yet received from peer."
+    juju-log "rabbitmq-server: RABBIT_USER||VHOST not yet received from peer."
     exit 0
   fi
-  PASSWD_FILE="/var/run/ensemble/$RABBIT_USER.passwd"
+  PASSWD_FILE="/var/run/juju/$RABBIT_USER.passwd"
   if [[ -e $PASSWD_FILE ]] ; then
     PASSWORD=$(cat $PASSWD_FILE)
   else
@@ -69,16 +69,16 @@ function amqp_changed() {
     chmod 0400 $PASSWD_FILE
   fi
   if ! vhost_exists ; then
-    ensemble-log "rabbitmq-server: Creating vhost $VHOST"
+    juju-log "rabbitmq-server: Creating vhost $VHOST"
     create_vhost
   fi
   if ! user_exists $RABBIT_USER ; then
-    ensemble-log "rabbitmq-server: Creating user $RABBIT_USER"
+    juju-log "rabbitmq-server: Creating user $RABBIT_USER"
     user_create $RABBIT_USER admin || exit 1
   else
-    ensemble-log "rabbitmq-server: user $RABBIT_USER already exists."
+    juju-log "rabbitmq-server: user $RABBIT_USER already exists."
   fi
-  ensemble-log "rabbitmq-server: Returning credentials for $RABBIT_USER@$HOSTNAME"
+  juju-log "rabbitmq-server: Returning credentials for $RABBIT_USER@$HOSTNAME"
   relation-set hostname=$HOSTNAME
   relation-set password=$PASSWORD
 }
@@ -88,7 +88,7 @@ function cluster_joined {
   LOCAL_UNIT_ID=$(echo $ENSEMBLE_UNIT_NAME | cut -d/ -f2)
   [[ $LOCAL_UNIT_ID -gt $REMOTE_UNIT_ID ]] && echo "Relation greater" && exit 0
   if [[ ! -e $ERLANG_COOKIE ]] ; then
-    ensemble-log "rabbitmq-server: ERROR Could not find cookie at $ERLANG_COOKIE"
+    juju-log "rabbitmq-server: ERROR Could not find cookie at $ERLANG_COOKIE"
     exit 1
   fi
   relation-set cookie=$(cat $ERLANG_COOKIE) host=$HOSTNAME
@@ -102,7 +102,7 @@ function cluster_changed {
   REMOTE_HOST=$(relation-get host)
   COOKIE_VALUE=$(relation-get cookie)
   [[ -z $REMOTE_HOST ]] || [[ -z $COOKIE_VALUE ]] && \
-    ensemble-log "rabbimtq-server: REMOTE_HOST||COOKIE_VALUE not yet set." \
+    juju-log "rabbimtq-server: REMOTE_HOST||COOKIE_VALUE not yet set." \
     exit 0
 
   service rabbitmq-server stop
@@ -124,5 +124,5 @@ case $ARG0 in
 esac
 
 rc=$?
-ensemble-log "rabbitmq-server: Hook $ARG0 complete. Exiting $rc"
+juju-log "rabbitmq-server: Hook $ARG0 complete. Exiting $rc"
 exit $rc
