@@ -84,8 +84,8 @@ function amqp_changed() {
 }
 
 function cluster_joined {
-  REMOTE_UNIT_ID=$(echo $ENSEMBLE_REMOTE_UNIT | cut -d/ -f2)
-  LOCAL_UNIT_ID=$(echo $ENSEMBLE_UNIT_NAME | cut -d/ -f2)
+  REMOTE_UNIT_ID=$(echo $JUJU_REMOTE_UNIT | cut -d/ -f2)
+  LOCAL_UNIT_ID=$(echo $JUJU_UNIT_NAME | cut -d/ -f2)
   [[ $LOCAL_UNIT_ID -gt $REMOTE_UNIT_ID ]] && echo "Relation greater" && exit 0
   if [[ ! -e $ERLANG_COOKIE ]] ; then
     juju-log "rabbitmq-server: ERROR Could not find cookie at $ERLANG_COOKIE"
@@ -95,8 +95,8 @@ function cluster_joined {
 }
 
 function cluster_changed {
-  REMOTE_UNIT_ID=$(echo $ENSEMBLE_REMOTE_UNIT | cut -d/ -f2)
-  LOCAL_UNIT_ID=$(echo $ENSEMBLE_UNIT_NAME | cut -d/ -f2)
+  REMOTE_UNIT_ID=$(echo $JUJU_REMOTE_UNIT | cut -d/ -f2)
+  LOCAL_UNIT_ID=$(echo $JUJU_UNIT_NAME | cut -d/ -f2)
   [[ $LOCAL_UNIT_ID -lt $REMOTE_UNIT_ID ]] && echo "Relation lesser" && exit 0
 
   REMOTE_HOST=$(relation-get host)
