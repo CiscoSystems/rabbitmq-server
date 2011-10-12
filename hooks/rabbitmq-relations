@@ -79,7 +79,7 @@ function amqp_changed() {
     juju-log "rabbitmq-server: user $RABBIT_USER already exists."
   fi
   juju-log "rabbitmq-server: Returning credentials for $RABBIT_USER@$HOSTNAME"
-  relation-set hostname=$HOSTNAME
+  relation-set hostname=`unit-get private-address`
   relation-set password=$PASSWORD
 }
 
