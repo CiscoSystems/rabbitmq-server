@@ -33,16 +33,7 @@ fi
 juju-log "rabbitmq-server: Firing hook $ARG0."
 
 function install_hook() {
-  DEFAULT_ETH=$(ip route  | grep default | awk '{ print $5 }')
-  IP=$(ifconfig  $DEFAULT_ETH | grep 'inet addr' | awk '{ print $2 }' | cut -d: -f2)
-
-  if ! cat /etc/hosts | grep "$IP $HOSTNAME" >>/dev/null; then
-    echo "Updating /etc/hosts"
-    echo $IP $HOSTNAME >> /etc/hosts
-  fi
-
   [[ ! `which pwgen` ]] && apt-get -y install pwgen
-
   DEBIAN_FRONTEND=noninteractive apt-get -qqy \
     install --no-install-recommends rabbitmq-server
   rc=$?
