@@ -23,11 +23,11 @@ HOSTNAME=`hostname -f`
 ERLANG_COOKIE="/var/lib/rabbitmq/.erlang.cookie"
 
 function user_exists {
-  $RABBIT_CTL list_users | grep $1 >/dev/null
+  $RABBIT_CTL list_users | grep -wq "^$1"
 }
 
 function user_is_admin {
-  $RABBIT_CTL list_users | grep $1 | grep true >/dev/null
+  $RABBIT_CTL list_users | grep -w "^$1" | grep -q "administrator"
 }
 
 function vhost_exists {
@@ -51,6 +51,6 @@ function user_create {
   if [[ $2 == 'admin' ]]  ; then
     user_is_admin $1 && return 0
     juju-log "rabbitmq: Granting user $1 admin access"
-    $RABBIT_CTL set_admin $1 || return 1
+    $RABBIT_CTL set_user_tags "$1" administrator || return 1
   fi
 }
