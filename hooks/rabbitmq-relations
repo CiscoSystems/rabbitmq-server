@@ -51,7 +51,7 @@ function amqp_changed() {
     juju-log "rabbitmq-server: RABBIT_USER||VHOST not yet received from peer."
     exit 0
   fi
-  PASSWD_FILE="/var/run/juju/$RABBIT_USER.passwd"
+  PASSWD_FILE="/var/lib/juju/$RABBIT_USER.passwd"
   if [[ -e $PASSWD_FILE ]] ; then
     PASSWORD=$(cat $PASSWD_FILE)
   else
