@@ -1,5 +1,5 @@
-ensemble: formula
-name: rabbitmq
+juju: charm
+name: rabbitmq-server
 summary:  "An AMQP server written in Erlang"
 description: |
  RabbitMQ is an implementation of AMQP, the emerging standard for high
